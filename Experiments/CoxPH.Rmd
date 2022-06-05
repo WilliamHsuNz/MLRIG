@@ -1,0 +1,170 @@
+---
+title: "CoxPH"
+author: "William Hsu"
+date: "10/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#install.packages("ranger")
+#install.packages("feather")
+#install.packages("ggplot2")
+#install.packages("pec")
+#install.packages("riskRegression")
+library(survival)
+#library(feather)
+#library(ggplot2)
+library(pec)
+#library(riskRegression)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#train_df = read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_train_90000inds.feather")
+####train_df = read_feather("/home/whsu014/data/Cox_EVENT_aggregated_train_90000inds.feather")
+#train_df = read_feather("/home/whsu014/data/Cox_EVENT_balanced_aggregated_train.feather")
+# imp_fatal_cvd patched
+#train_df = read_feather("/home/whsu014/data/Cox_EVENT_train.feather")
+#train_df = read_feather("/home/whsu014/data/Cox_EVENT_aggregated_train.feather")
+train_df = read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_train.feather")
+
+#train_df = read_feather("/home/whsu014/data/Cox_EVENT_aggregated_normalized_train.feather")
+#train_df = read_feather("/home/whsu014/data/Cox_EVENT_aggregated_normalized(includeTIME)_train.feather")
+#train_df = read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_normalized_train.feather")
+
+#train_df = read_feather("/home/whsu014/data/Cox_PDC_last_quarter_train_90000inds.feather")
+#sample_weights_df = read_feather("/home/whsu014/data/Cox_EVENT_train_sample_weights.feather")
+class(train_df)
+dim(train_df)
+#class(sample_weights_df)
+#dim(sample_weights_df)
+#colnames(sample_weights_df)
+```
+
+```{r}
+# remove validation set
+train_df = train_df[9001:90000, ]
+dim(train_df)
+#sample_weights_df = sample_weights_df[9001:90000, ]
+#dim(sample_weights_df)
+#sample_weights_vector = sample_weights_df[['SAMPLE_WEIGHT']]
+#length(sample_weights_vector)
+```
+
+```{r}
+head(train_df[c("TIME", "STATUS")], 10)
+tail(train_df[c("TIME", "STATUS")], 10)
+```
+
+
+```{r}
+
+# Create and fit CoxPH model
+# EVENT
+# remove ETHN_5, DIED, CVD_METOLAZONE, OTHER_PREDNISOLONE, OTHER_CLARITHROMYCIN, 
+# OTHER_VILDAGLIPTIN, PT_IMP_FATAL_CVD
+cox <- coxph(Surv(TIME, STATUS) ~VSIMPLE_INDEX_MASTER + AGE + SEX + NZDEP + ETHN_1 + ETHN_2 + ETHN_3 + ETHN_4 + TEST + HDL + LDL + TRI + TCL + TCHDL  + LL_SIMVASTATIN + LL_BEZAFIBRATE + LL_ATORVASTATIN + LL_EZETIMIBE + LL_NICOTINIC_ACID + LL_ACIPIMOX + LL_CHOLESTYRAMINE + LL_COLESTIPOL_HYDROCHLORIDE + LL_PRAVASTATIN + LL_EZETIMIBE_WITH_SIMVASTATIN + LL_GEMFIBROZIL + LL_PDC + CVD_FELODIPINE + CVD_QUINAPRIL + CVD_METOPROLOL_SUCCINATE + CVD_CILAZAPRIL + CVD_ATENOLOL + CVD_BENDROFLUMETHIAZIDE + CVD_WARFARIN_SODIUM + CVD_FUROSEMIDE + CVD_CELIPROLOL + CVD_DILTIAZEM_HYDROCHLORIDE + CVD_ASPIRIN + CVD_NIFEDIPINE + CVD_CAPTOPRIL + CVD_DIPYRIDAMOLE + CVD_CANDESARTAN_CILEXETIL + CVD_INDAPAMIDE + CVD_ENALAPRIL_MALEATE + CVD_SOTALOL + CVD_GLYCERYL_TRINITRATE + CVD_ISOSORBIDE_MONONITRATE + CVD_PINDOLOL + CVD_CARVEDILOL + CVD_METHYLDOPA + CVD_LOSARTAN_POTASSIUM + CVD_VERAPAMIL_HYDROCHLORIDE + CVD_AMILORIDE_HYDROCHLORIDE + CVD_CLONIDINE_HYDROCHLORIDE + CVD_CLONIDINE + CVD_NADOLOL + CVD_PROPRANOLOL + CVD_AMLODIPINE + CVD_LABETALOL + CVD_LISINOPRIL + CVD_TRIAMTERENE + CVD_TIMOLOL + CVD_METOPROLOL_TARTRATE + CVD_ACEBUTOLOL + CVD_PERHEXILINE_MALEATE + CVD_CHLORTALIDONE + CVD_BUMETANIDE + CVD_PERINDOPRIL + CVD_TRANDOLAPRIL + CVD_CLOPIDOGREL + CVD_ISRADIPINE + CVD_RIVAROXABAN + CVD_DABIGATRAN + CVD_BISOPROLOL_FUMARATE + CVD_PRASUGREL + CVD_NICORANDIL  + CVD_TICAGRELOR  + CVD_HYDROCHLOROTHIAZIDE + OTHER_TENOXICAM + OTHER_PANTOPRAZOLE + OTHER_OMEPRAZOLE + OTHER_NAPROXEN_SODIUM + OTHER_DICLOFENAC_SODIUM + OTHER_METFORMIN_HYDROCHLORIDE + OTHER_SULINDAC + OTHER_GLICLAZIDE + OTHER_GLIPIZIDE + OTHER_INSULIN_ISOPHANE + OTHER_INSULIN_NEUTRAL + OTHER_KETOPROFEN + OTHER_IBUPROFEN + OTHER_INSULIN_ASPART + OTHER_PREDNISONE + OTHER_INDOMETHACIN + OTHER_NAPROXEN + OTHER_GLIBENCLAMIDE + OTHER_RANITIDINE + OTHER_PIROXICAM + OTHER_INSULIN_LISPRO + OTHER_TIAPROFENIC_ACID + OTHER_PIOGLITAZONE + OTHER_DEXAMETHASONE +  OTHER_HYDROCORTISONE  + OTHER_TOLBUTAMIDE + OTHER_MEFENAMIC_ACID + OTHER_LANSOPRAZOLE + OTHER_METHYLPREDNISOLONE + OTHER_INSULIN_GLARGINE + OTHER_INSULIND_GLULISINE + OTHER_AMOXYCILLIN  + OTHER_INSULIN_LISPRO_PROTAMINE + OTHER_INSULIN_ASPART_PROTAMINE  + NUMBER_OF_DAYS + ACUTE_ADM + hx_broad_cvd + hx_athero_cvd + hx_chd_diags + hx_acs + hx_mi + hx_unst_angina + hx_angina + hx_other_chd + hx_chd_procs + hx_pci + hx_cabg + hx_other_chd_procs + hx_pvd_diags + hx_pvd_procs + hx_haemorrhagic_stroke + hx_cevd + hx_ischaemic_stroke + hx_tia + hx_other_cevd + hx_heart_failure + hx_atrial_fibrillation + mortality_broad_cvd_with_other + mortality_other_related_cvd_deaths + out_broad_cvd + out_athero_cvd + out_chd + out_mi + out_acs + out_unst_angina + out_angina + out_other_chd + out_pvd_diags + out_pvd_procs + out_pci_cabg + out_haemorrhagic_stroke + out_cevd + out_ischaemic_stroke + out_tia + out_other_cevd + out_heart_failure + out_atrial_fibrillation + HBA1C + TEST_HBA1C + TESTED_HBA1C + EGFR + TEST_EGFR + TESTED_EGFR + PT_SBP + PT_SBP2 + PT_DBP + PT_DBP2 + PT_SMOKING + PT_EN_TCHDL + PT_DIABETES + PT_FAMILY_HISTORY + PT_GEN_LIPID + PT_RENAL + PT_DIABETES_YR + PT_ATRIAL_FIBRILLATION , data = train_df, x = TRUE)
+             
+# weights=sample_weights_vector -- current model can fit using sample weight but
+# does not know how to predict survival probability once model is fitted with 
+# sample weight.
+# Loglik converged before variable  66,81,107 ; coefficient may be infinite. 
+# aggregated removed (ETHN_5, DIED, CVD_METOLAZONE, OTHER_PREDNISOLONE,
+# OTHER_CLARITHROMYCIN ,OTHER_VILDAGLIPTIN, PT_IMP_FATAL_CVD)
+
+
+# compute the predicted survivor function 
+# of a Cox proportional hazards model
+# cox_fit = survfit(cox, train_df)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# Calculate concordance statistics
+# concordance(cox, timewt="n")
+# get summary of fitted cox model
+#options(max.print=1000000)
+#summary(cox)
+cox$coefficients
+```
+```{r}
+max(train_df$TIME)
+```
+
+
+```{r}
+## make prediction on test set
+## remove y_hat (STATUS)
+## and set all TIME to 1800 (20 quarters)
+#test_df = read_feather("/home/whsu014/data/Cox_EVENT_aggregated_test_10096inds.feather")
+#test_df = read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_test_10096inds.feather")
+# imp_fatal_cvd patched
+#test_df = read_feather("/home/whsu014/data/Cox_EVENT_aggregated_test.feather")
+test_df = read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_test.feather")
+
+#test_df = read_feather("/home/whsu014/data/Cox_EVENT_balanced_aggregated_test.feather")
+#test_df = read_feather("/home/whsu014/data/Cox_EVENT_balanced_last_quarter_test.feather")
+#test_df = read_feather("/home/whsu014/data/Cox_EVENT_aggregated_normalized_test.feather")
+#test_df = read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_normalized_test.feather")
+#test_df = read_feather("/home/whsu014/data/Cox_PDC_last_quarter_test_10096inds.feather")
+dim(test_df)
+
+#test_df = subset(test_df, select=-c(TIME, STATUS))
+test_df = subset(test_df, select=-c(TIME, STATUS))
+#test_df$TIME <- 1800
+dim(test_df)
+```
+```{r}
+colnames(test_df)
+head(test_df)
+```
+
+```{r}
+# see https://cran.r-project.org/web/packages/pec/pec.pdf page 41
+# the coxph model does not need to be fitted
+
+cox_pred <- predictSurvProb(cox, test_df, time=1800) #1800
+#cox_pred <- predict(cox, newdata=test_df, type="survival")
+class(cox_pred)
+length(cox_pred)
+min(cox_pred)
+max(cox_pred)
+```
+
+```{r}
+dim(cox_pred)
+class(cox_pred)
+head(cox_pred)
+cox_pred_df <- as.data.frame(cox_pred)
+cox_pred_df = 1 - cox_pred_df
+dim(cox_pred_df)
+head(cox_pred_df)
+```
+
+```{r}
+write_feather(cox_pred_df, "/home/whsu014/data/Cox_EVENT_last_quarter_IFC_patched_yhat.feather")
+```
+
+
+```{r}
+#cox_pred_df = read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_yhat_10096inds.feather")
+#head(cox_pred_df)
+#cox_pred_df = 1 - cox_pred_df
+head(cox_pred_df)
+```
+
+
+
+
+
+
+```{r}
+concordance(cox)
+```
+
+
