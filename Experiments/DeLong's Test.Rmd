@@ -1,0 +1,161 @@
+---
+title: "DeLong's Test"
+author: "William Hsu"
+date: "10/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#install.packages("pROC")
+library(pROC)
+library(feather)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+# Post-PREDICT 
+# 16 to 4
+#lstm_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_16to4_LSTM_500_epochs_yhat.feather")
+#rnn_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_16to4_RNN_yhat.feather")
+#mlp_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_16to4_MLP_yhat.feather")
+#rc_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_16to4_RC_yhat.feather")
+#rc_a_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_16to4_RC_aggregated_yhat.feather")
+#rc_l_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_RC_last_quarter_yhat.feather")
+
+# 12 to 4
+#lstm_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_12to4_LSTM_500_epochs_yhat.feather")
+#rnn_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_12to4_RNN_yhat.feather")
+#mlp_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_12to4_MLP_yhat.feather")
+#rc_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_12to4_RC_yhat.feather")
+#rc_a_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_12to4_RC_aggregated_yhat.feather")
+#rc_l_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_RC_last_quarter_yhat.feather")
+
+#8 to 4
+#lstm_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_8to4_LSTM_500_epochs_yhat.feather")
+#rnn_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_8to4_RNN_yhat.feather")
+#mlp_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_8to4_MLP_yhat.feather")
+#rc_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_8to4_RC_yhat.feather")
+#rc_a_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_8to4_RC_aggregated_yhat.feather")
+#rc_l_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_RC_last_quarter_yhat.feather")
+
+#4 to 4
+lstm_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_4to4_LSTM_500_epochs_yhat.feather")
+rnn_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_4to4_RNN_yhat.feather")
+mlp_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_4to4_MLP_yhat.feather")
+rc_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_4to4_RC_yhat.feather")
+rc_a_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_4to4_RC_aggregated_yhat.feather")
+rc_l_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_RC_last_quarter_yhat.feather")
+
+y_df <- read_feather("/home/whsu014/data/Post_PREDICT_PDC_y.feather")
+```
+
+
+
+```{r}
+#  PDC
+lstm_df <- read_feather("/home/whsu014/data/PDC_LSTM_1layer_yhat.feather")
+rnn_df <- read_feather("/home/whsu014/data/PDC_SimpleRNN_1layer_yhat.feather")
+mlp_df <- read_feather("/home/whsu014/data/PDC_MLP_yhat.feather")
+rc_df <- read_feather("/home/whsu014/data/PDC_LR_yhat.feather")
+rc_a_df <- read_feather("/home/whsu014/data/PDC_LR_aggregated_yhat.feather")
+rc_l_df <- read_feather("/home/whsu014/data/PDC_LR_last_quarter_yhat.feather")
+lr_df <- read_feather("/home/whsu014/data/PDC_Logit_normalized_no_penalty_yhat.feather")
+lr_a_df <- read_feather("/home/whsu014/data/PDC_Logit_aggregated_normalized_no_penalty_yhat.feather")
+lr_l_df <- read_feather("/home/whsu014/data/PDC_Logit_last_quarter_normalized_no_penalty_yhat.feather")
+
+y_df <- read_feather("/home/whsu014/data/PDC_y.feather")
+```
+
+```{r}
+# EVENT
+#lstm_df <- read_feather("/home/whsu014/data/EVENT_LSTM_L201_yhat.feather")
+##lstm_df <- read_feather("/home/whsu014/data/EVENT_LSTM_L201_Sample_Weight_yhat.feather")
+lstm_df <- read_feather("/home/whsu014/data/EVENT_LSTM_L201_No_Weighting_IFC_patched_yhat.feather")
+#rnn_df <- read_feather("/home/whsu014/data/EVENT_RNN_yhat.feather")
+##rnn_df <- read_feather("/home/whsu014/data/EVENT_RNN_L201_Sample_Weight_yhat.feather")
+rnn_df <- read_feather("/home/whsu014/data/EVENT_RNN_L201_Sample_Weight_IFC_patched_Hparam_searched_yhat.feather")
+#mlp_df <- read_feather("/home/whsu014/data/EVENT_MLP_yhat.feather")
+##mlp_df <- read_feather("/home/whsu014/data/EVENT_MLP_Sample_Weight_yhat.feather")
+mlp_df <- read_feather("/home/whsu014/data/EVENT_MLP_No_Weighting_IFC_patched_yhat.feather")
+  
+##rc_df <- read_feather("/home/whsu014/data/EVENT_RC_yhat.feather")
+rc_df <- read_feather("/home/whsu014/data/EVENT_RC_IFC_patched_yhat.feather")
+#rc_df <- read_feather("/home/whsu014/data/EVENT_RC_normalized_yhat.feather")
+##rc_a_df <- read_feather("/home/whsu014/data/EVENT_RC_aggregated_yhat.feather")
+rc_a_df <- read_feather("/home/whsu014/data/EVENT_RC_A_IFC_patched_yhat.feather")
+##rc_l_df <- read_feather("/home/whsu014/data/EVENT_RC_last_quarter_yhat.feather")
+#lr_df <- read_feather("/home/whsu014/data/EVENT_LR_yhat.feather")
+rc_l_df <- read_feather("/home/whsu014/data/EVENT_RC_L_IFC_patched_yhat.feather")
+##lr_df <- read_feather("/home/whsu014/data/EVENT_LR_normalized_yhat.feather")
+#lr_a_df <- read_feather("/home/whsu014/data/EVENT_LR_aggregated_yhat.feather")
+lr_df <- read_feather("/home/whsu014/data/EVENT_LR_IFC_patched_yhat.feather")
+#lr_a_df <- read_feather("/home/whsu014/data/EVENT_LR_aggregated_normalized_yhat.feather")
+###lr_a_df <- read_feather("/home/whsu014/data/EVENT_LR_aggregated_normalized_Class_Weight_yhat.feather")
+lr_a_df <- read_feather("/home/whsu014/data/EVENT_LR_A_Class_Weight_IFC_patched_yhat.feather")
+#lr_l_df <- read_feather("/home/whsu014/data/EVENT_LR_last_quarter_yhat.feather")
+##lr_l_df <- read_feather("/home/whsu014/data/EVENT_LR_last_quarter_normalized_yhat.feather")
+lr_l_df <- read_feather("/home/whsu014/data/EVENT_LR_L_IFC_patched_yhat.feather")
+
+#cox_a_df <- read_feather("/home/whsu014/data/Cox_EVENT_aggregated_yhat_10096inds.feather")
+cox_a_df <- read_feather("/home/whsu014/data/Cox_EVENT_aggregated_IFC_patched_yhat.feather")
+#cox_l_df <- read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_yhat_10096inds.feather")
+cox_l_df <- read_feather("/home/whsu014/data/Cox_EVENT_last_quarter_IFC_patched_yhat.feather")
+  
+#y_df <- read_feather("/home/whsu014/data/EVENT_y.feather")
+y_df <- read_feather("/home/whsu014/data/EVENT_IFC_patched_y.feather")
+```
+
+
+```{r}
+dim(lstm_df$EVENT)
+dim(y_df$EVENT)
+#class(lstm_df[, 2])
+#colnames(cox_a_df)
+#colnames(lr_df)
+head(lstm_df$EVENT)
+```
+
+
+```{r}
+#
+roc_lstm <- roc(y_df$ADHERENT, lstm_df$ADHERENT)
+roc_rnn <- roc(y_df$ADHERENT, rnn_df$ADHERENT)
+roc_mlp <- roc(y_df$ADHERENT, mlp_df$ADHERENT)
+roc_rc <- roc(y_df$ADHERENT, rc_df$LL_COVERED)
+roc_a_rc <- roc(y_df$ADHERENT, rc_a_df$LL_COVERED)
+roc_l_rc <- roc(y_df$ADHERENT, rc_l_df$LL_COVERED)
+
+#roc_lr <- roc(y_df$EVENT, lr_df$CVD_EVENT)
+#roc_a_lr <- roc(y_df$EVENT, lr_a_df$CVD_EVENT)
+#roc_l_lr <- roc(y_df$EVENT, lr_l_df$CVD_EVENT)
+
+#roc_a_cox <- roc(y_df$EVENT, cox_a_df$V1)
+#roc_l_cox <- roc(y_df$EVENT, cox_l_df$V1)
+
+roc.test(roc_a_rc, roc_l_rc, method=c("delong"))
+```
+
+```{r}
+#
+roc_lstm <- roc(y_df$EVENT, lstm_df$EVENT)
+roc_rnn <- roc(y_df$EVENT, rnn_df$EVENT)
+roc_mlp <- roc(y_df$EVENT, mlp_df$EVENT)
+roc_rc <- roc(y_df$EVENT, rc_df$CVD_EVENT)
+roc_a_rc <- roc(y_df$EVENT, rc_a_df$CVD_EVENT)
+roc_l_rc <- roc(y_df$EVENT, rc_l_df$CVD_EVENT)
+
+roc_lr <- roc(y_df$EVENT, lr_df$CVD_EVENT)
+roc_a_lr <- roc(y_df$EVENT, lr_a_df$CVD_EVENT)
+roc_l_lr <- roc(y_df$EVENT, lr_l_df$CVD_EVENT)
+
+roc_a_cox <- roc(y_df$EVENT, cox_a_df$V1)
+roc_l_cox <- roc(y_df$EVENT, cox_l_df$V1)
+
+roc.test(roc_a_cox, roc_l_cox, method=c("delong"))
+```
+
